@@ -1,0 +1,318 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booking Form</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #ff7700;
+background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Cpolygon fill='%23cc0000' points='957 450 539 900 1396 900'/%3E%3Cpolygon fill='%23aa0000' points='957 450 872.9 900 1396 900'/%3E%3Cpolygon fill='%23d6002b' points='-60 900 398 662 816 900'/%3E%3Cpolygon fill='%23b10022' points='337 900 398 662 816 900'/%3E%3Cpolygon fill='%23d9004b' points='1203 546 1552 900 876 900'/%3E%3Cpolygon fill='%23b2003d' points='1203 546 1552 900 1162 900'/%3E%3Cpolygon fill='%23d3006c' points='641 695 886 900 367 900'/%3E%3Cpolygon fill='%23ac0057' points='587 900 641 695 886 900'/%3E%3Cpolygon fill='%23c4008c' points='1710 900 1401 632 1096 900'/%3E%3Cpolygon fill='%239e0071' points='1710 900 1401 632 1365 900'/%3E%3Cpolygon fill='%23aa00aa' points='1210 900 971 687 725 900'/%3E%3Cpolygon fill='%23880088' points='943 900 1210 900 971 687'/%3E%3C/svg%3E");
+background-attachment: fixed;
+background-size: cover;
+      
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+      .container {
+        max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    div {
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    select, button, input {
+      width: 90%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #333;
+      outline: none;
+      transition: border 0.3s ease;
+    }
+
+    select:focus, button:focus, input:focus {
+      border-color: #007bff;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:active {
+      background-color: #004085;
+    }
+
+    option {
+      padding: 10px;
+    }
+
+    /* Responsive styling */
+    @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
+
+      select, button, input {
+        font-size: 14px;
+        padding: 8px;
+      }
+    }
+
+    /* Button container for Step 2 */
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .time-container {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .time-container select {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form id="bookingForm">
+      <label for="dropdown1">Tester:</label>
+      <select id="dropdown1">
+        <option selected disabled>Select Option</option>
+        <option value="option1">ETS364</option>
+        <option value="option2">ETS800</option>
+      </select>
+      
+      <label for="dropdown2">Workbench:</label>
+      <select id="dropdown2"></select>
+
+      <label for="datePicker">Select Dates:</label>
+      <input type="text" id="datePicker" placeholder="Select multiple dates" readonly />
+
+      <div id="timeSlots"></div>
+
+      <label for="dropdown3">Peripheral:</label>
+      <select id="dropdown3">
+        <option value="peripheral1" selected="selected">No Peripheral Required</option>
+        <option value="peripheral2">TFU</option>
+        <option value="peripheral3">Handler_Talos</option>
+        <option value="peripheral4">Prober</option>
+      </select>
+
+      <button type="button" id="proceedBtn" data-clicked="false">Proceed</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    flatpickr("#datePicker", {
+      mode: "multiple",
+      dateFormat: "Y-m-d",
+      minDate: "today",
+      maxDate: new Date().fp_incr(14),
+      onChange: handleDateChange
+    });
+    function formatDateWithoutTZ(date) {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    function getISTTime(date) {
+      let istOffset = 330;
+      let localOffset = date.getTimezoneOffset();
+      return new Date(date.getTime() + (istOffset + localOffset) * 60000);
+    }
+
+    function generateTimeSlots(selectedDate) {
+      let now = getISTTime(new Date());
+      let date = new Date(selectedDate);
+      let startHour = 0;
+      let startMinute = 0;
+
+      // Compare dates without timezone issues
+      const nowDateStr = formatDateWithoutTZ(now);
+      const selectedDateStr = formatDateWithoutTZ(date);
+      
+      if (nowDateStr === selectedDateStr) {
+        // Use IST time for slot generation
+        const istNow = getISTTime(new Date());
+        startHour = istNow.getHours();
+        startMinute = istNow.getMinutes() >= 30 ? 0 : 30;
+        if (istNow.getMinutes() >= 30) startHour++;
+      }
+
+      const options = [];
+      for (let h = startHour; h <= 23; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          if (h === startHour && m < startMinute) continue;
+          if (h === 23 && m === 30) {
+            options.push('23:30'); // Explicitly add 23:30 as last start option
+            break;
+          }
+          options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+        }
+      }
+      return options;
+    }
+    function updateEndTimeOptions(startSelect, endSelect, timeOptions) {
+      const selectedIndex = timeOptions.indexOf(startSelect.value);
+      endSelect.innerHTML = '';
+      
+      // Start from next time slot after selected start time
+      for (let i = selectedIndex + 1; i < timeOptions.length; i++) {
+        const option = document.createElement('option');
+        option.value = timeOptions[i];
+        option.text = timeOptions[i];
+        if (i === selectedIndex + 1) option.selected = true;
+        endSelect.appendChild(option);
+      }
+      
+      // Special handling for when start time is 23:30
+      if (startSelect.value === '23:30') {
+        endSelect.innerHTML = '';
+        const option = document.createElement('option');
+        option.value = '00:00';
+        option.text = '00:00 (next day)';
+        option.selected = true;
+        endSelect.appendChild(option);
+      }
+      // Add 00:00 as final option for all other cases
+      else if (!timeOptions.includes('00:00')) {
+        const option = document.createElement('option');
+        option.value = '00:00';
+        option.text = '00:00 (next day)';
+        endSelect.appendChild(option);
+      }
+    }
+
+    function handleDateChange(selectedDates) {
+      const container = document.getElementById("timeSlots");
+      container.innerHTML = "";
+      selectedDates.sort((a, b) => a - b);
+
+      selectedDates.forEach(date => {
+        const istDate = formatDateWithoutTZ(date);
+        const dateStr = istDate;
+        
+        const timeOptions = generateTimeSlots(date);
+        const timeContainer = document.createElement('div');
+        timeContainer.className = 'time-container';
+
+        const dateLabel = document.createElement('label');
+        dateLabel.textContent = `${dateStr}`;
+        container.appendChild(dateLabel);
+
+        const startContainer = document.createElement('div');
+        const startLabel = document.createElement('label');
+        startLabel.textContent = 'Start Time:';
+        startContainer.appendChild(startLabel);
+
+        const startSelect = document.createElement('select');
+        timeOptions.forEach((time, i) => {
+          const option = document.createElement('option');
+          option.value = time;
+          option.text = time;
+          if (i === 0) option.selected = true;
+          startSelect.appendChild(option);
+        });
+        startContainer.appendChild(startSelect);
+        timeContainer.appendChild(startContainer);
+
+        const endContainer = document.createElement('div');
+        const endLabel = document.createElement('label');
+        endLabel.textContent = 'End Time:';
+        endContainer.appendChild(endLabel);
+
+        const endSelect = document.createElement('select');
+        timeContainer.appendChild(endContainer);
+        endContainer.appendChild(endSelect);
+        updateEndTimeOptions(startSelect, endSelect, timeOptions);
+        startSelect.addEventListener('change', () => {
+          updateEndTimeOptions(startSelect, endSelect, timeOptions);
+        });
+
+        container.appendChild(timeContainer);
+      });
+    }
+
+    document.getElementById("dropdown1").addEventListener("change", function () {
+      var opt1 = ['Eagle 12', 'Eagle13', 'Eagle14', 'Eagle16', 'Eagle17', 'Eagle2', 'A36402', 'A36401', 'Eagle5', 'Eagle6'];
+      var opt2 = ['ETS800 08 H1', 'ETS800 08 H2', 'ETS800 11 H1', 'ETS800 11 H2', 'ETS800 18 H1', 'ETS800 20 H1','A80004H1','A80004H2', 'A80003', 'ETS800 24 H1', 'ETS800 24 H2', 'A80001H1', 'A80001H2', 'ETS800 15H1', 'ETS800 15H2'];
+      const workbench = document.getElementById("dropdown2");
+      workbench.innerHTML = "";
+      if(this.value==="option1"){
+        while (workbench.options.length > 0) {                
+          workbench.remove(0);
+        } 
+        opt1.forEach(option => {
+          let optionElement = document.createElement('option');
+          optionElement.value = option;
+          optionElement.textContent = option;
+          workbench.appendChild(optionElement);
+      });
+      }
+      if(this.value==="option2"){
+        while (workbench.options.length > 0) {                
+          workbench.remove(0);
+        } 
+        opt2.forEach(option => {
+          let optionElement = document.createElement('option');
+          optionElement.value = option;
+          optionElement.textContent = option;
+          workbench.appendChild(optionElement);
+      });
+      }
+
+      workbench.firstChild.selected = true;
+    });
+    document.getElementById("dropdown2").addEventListener('change', function(){
+        document.getElementById("dropdown2").querySelectorAll("option").forEach(opt => opt.removeAttribute("selected"));
+        document.getElementById("dropdown2").selectedOptions[0].setAttribute("selected", "selected");
+    });
+    document.getElementById("dropdown3").addEventListener('change', function(){
+        document.getElementById("dropdown3").querySelectorAll("option").forEach(opt => opt.removeAttribute("selected"));
+        document.getElementById("dropdown3").selectedOptions[0].setAttribute("selected", "selected");
+    });
+
+    document.getElementById("proceedBtn").addEventListener("click", function () {
+      this.setAttribute("data-clicked", "true");
+    });
+  </script>
+</body>
+</html>
